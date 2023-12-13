@@ -184,7 +184,7 @@ More JAX-based implementation are coming. [Antonin Raffin](https://github.com/ar
 import random
 from typing import Callable
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 
@@ -199,13 +199,14 @@ def evaluate(
     device: torch.device,
     epsilon: float = 0.05,
     capture_video: bool = True,
+    seed: int = 1,
 ):
     envs = gym.vector.SyncVectorEnv([make_env(env_id, 0, 0, capture_video, run_name)])
     model = Model(envs).to(device)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
-    obs = envs.reset()
+    obs, _ = envs.reset(seed=seed)
     episodic_returns = []
     while len(episodic_returns) < eval_episodes:
         if random.random() < epsilon:

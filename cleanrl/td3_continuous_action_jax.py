@@ -8,7 +8,7 @@ from typing import Sequence
 
 import flax
 import flax.linen as nn
-import gym
+import gymnasium as gym
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -72,7 +72,6 @@ def make_env(env_id, seed, idx, capture_video, run_name):
         if capture_video:
             if idx == 0:
                 env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
-        env.seed(seed)
         env.action_space.seed(seed)
         env.observation_space.seed(seed)
         return env
@@ -156,7 +155,7 @@ if __name__ == "__main__":
     )
 
     # TRY NOT TO MODIFY: start the game
-    obs = envs.reset()
+    obs, _ = envs.reset(seed=args.seed)
     actor = Actor(
         action_dim=np.prod(envs.single_action_space.shape),
         action_scale=jnp.array((envs.action_space.high - envs.action_space.low) / 2.0),
@@ -269,7 +268,8 @@ if __name__ == "__main__":
             )
 
         # TRY NOT TO MODIFY: execute the game and log data.
-        next_obs, rewards, dones, infos = envs.step(actions)
+        next_obs, rewards, terminated, truncated, infos = envs.step(actions)
+        dones = np.logical_or(terminated, truncated) # Modified for gymnasium by balloch
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
         for info in infos:

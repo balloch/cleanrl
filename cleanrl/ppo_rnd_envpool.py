@@ -7,7 +7,7 @@ from collections import deque
 from distutils.util import strtobool
 
 import envpool
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -101,7 +101,7 @@ class RecordEpisodeStatistics(gym.Wrapper):
         self.episode_lengths = None
 
     def reset(self, **kwargs):
-        observations = super().reset(**kwargs)
+        observations, infos = super().reset(**kwargs)
         self.episode_returns = np.zeros(self.num_envs, dtype=np.float32)
         self.episode_lengths = np.zeros(self.num_envs, dtype=np.int32)
         self.lives = np.zeros(self.num_envs, dtype=np.int32)
@@ -110,7 +110,8 @@ class RecordEpisodeStatistics(gym.Wrapper):
         return observations
 
     def step(self, action):
-        observations, rewards, dones, infos = super().step(action)
+        observations, rewards, terminated, truncated, infos = super().step(action)
+        dones = np.logical_or(terminated, truncated) # Modified for gymnasium by balloch
         self.episode_returns += infos["reward"]
         self.episode_lengths += 1
         self.returned_episode_returns[:] = self.episode_returns
@@ -313,7 +314,8 @@ if __name__ == "__main__":
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    next_obs = torch.Tensor(envs.reset()).to(device)
+    next_obs, _ = envs.reset(seed=args.seed)
+    next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
 
@@ -321,7 +323,9 @@ if __name__ == "__main__":
     next_ob = []
     for step in range(args.num_steps * args.num_iterations_obs_norm_init):
         acs = np.random.randint(0, envs.single_action_space.n, size=(args.num_envs,))
-        s, r, d, _ = envs.step(acs)
+        s, r, term, trun, _ = envs.step(acs)
+        d = np.logical_or(term, trun) # Modified for gymnasium by balloch
+
         next_ob += s[:, 3, :, :].reshape([-1, 1, 84, 84]).tolist()
 
         if len(next_ob) % (args.num_steps * args.num_envs) == 0:
@@ -355,7 +359,8 @@ if __name__ == "__main__":
             logprobs[step] = logprob
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs, reward, done, info = envs.step(action.cpu().numpy())
+            next_obs, reward, terminated, truncated, info = envs.step(action.cpu().numpy())
+            done = np.logical_or(terminated, truncated) # Modified for gymnasium by balloch
             rewards[step] = torch.tensor(reward).to(device).view(-1)
             next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(done).to(device)
             rnd_next_obs = (

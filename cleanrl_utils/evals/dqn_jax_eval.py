@@ -3,7 +3,7 @@ from typing import Callable
 
 import flax
 import flax.linen as nn
-import gym
+import gymnasium as gym
 import jax
 import numpy as np
 
@@ -20,7 +20,7 @@ def evaluate(
     seed=1,
 ):
     envs = gym.vector.SyncVectorEnv([make_env(env_id, 0, 0, capture_video, run_name)])
-    obs = envs.reset()
+    obs, _ = envs.reset(seed=seed)
     model = Model(action_dim=envs.single_action_space.n)
     q_key = jax.random.PRNGKey(seed)
     params = model.init(q_key, obs)

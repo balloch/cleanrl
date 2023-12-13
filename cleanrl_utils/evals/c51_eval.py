@@ -2,7 +2,7 @@ import random
 from argparse import Namespace
 from typing import Callable
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 
@@ -26,7 +26,7 @@ def evaluate(
     model = model.to(device)
     model.eval()
 
-    obs = envs.reset()
+    obs, _ = envs.reset(seed=args.seed)
     episodic_returns = []
     while len(episodic_returns) < eval_episodes:
         if random.random() < epsilon:

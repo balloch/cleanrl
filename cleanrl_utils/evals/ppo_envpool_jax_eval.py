@@ -22,7 +22,7 @@ def evaluate(
 ):
     envs = make_env(env_id, seed, num_envs=1)()
     Network, Actor, Critic = Model
-    next_obs = envs.reset()
+    next_obs, _ = envs.reset(seed=seed)
     network = Network()
     actor = Actor(action_dim=envs.single_action_space.n)
     critic = Critic()
@@ -58,7 +58,7 @@ def evaluate(
     episodic_returns = []
     for episode in range(eval_episodes):
         episodic_return = 0
-        next_obs = envs.reset()
+        next_obs, _ = envs.reset(seed=seed)
         terminated = False
 
         if capture_video:
