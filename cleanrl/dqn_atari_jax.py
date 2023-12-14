@@ -186,9 +186,10 @@ if __name__ == "__main__":
         envs.single_observation_space,
         envs.single_action_space,
         "cpu",
-        optimize_memory_usage=True,
+        optimize_memory_usage=False, #True,
         handle_timeout_termination=True,
     )
+    # balloch: you cannot have optimize_memory and handle_timeout_term at the same time
 
     @jax.jit
     def update(q_state, observations, actions, next_observations, rewards, dones):
@@ -224,19 +225,20 @@ if __name__ == "__main__":
         dones = np.logical_or(terminated, truncated) # Modified for gymnasium by balloch
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
-        for info in infos:
-            if "episode" in info.keys():
-                print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
-                writer.add_scalar("charts/epsilon", epsilon, global_step)
-                break
+        if 'final_info' in infos:
+            for info in infos['final_info']:
+                if isinstance(info, dict) and "episode" in info.keys():
+                    print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+                    writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+                    writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                    writer.add_scalar("charts/epsilon", epsilon, global_step)
+                    break
 
-        # TRY NOT TO MODIFY: save data to reply buffer; handle `terminal_observation`
+        # TRY NOT TO MODIFY: save data to reply buffer; handle `finalobservation`
         real_next_obs = next_obs.copy()
         for idx, d in enumerate(dones):
             if d:
-                real_next_obs[idx] = infos[idx]["terminal_observation"]
+                real_next_obs[idx] = infos["final_observation"][idx]
         rb.add(obs, real_next_obs, actions, rewards, dones, infos)
 
         # TRY NOT TO MODIFY: CRUCIAL step easy to overlook

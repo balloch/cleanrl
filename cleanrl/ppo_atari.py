@@ -225,7 +225,6 @@ if __name__ == "__main__":
             if 'final_info' in info:
                 for item in info['final_info']:
                     if isinstance(item, dict) and "episode" in item.keys():
-                        # for item in info:
                         print(f"global_step={global_step}, episodic_return={item['episode']['r']}")
                         writer.add_scalar("charts/episodic_return", item["episode"]["r"], global_step)
                         writer.add_scalar("charts/episodic_length", item["episode"]["l"], global_step)
